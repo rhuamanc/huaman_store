@@ -24,11 +24,25 @@ interface IPurchase {
   createdAt: string;
 }
 
+interface ICallbackLog {
+  _id: string;
+  receivedAt: string;
+  signature: string;
+  signatureValid: boolean;
+  outcome: string;
+  notes: string;
+  headers: Record<string, string>;
+  rawBody: string;
+  parsedBody: Record<string, unknown> | null;
+}
+
 export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [listings, setListings] = useState<IListing[]>([]);
   const [slides, setSlides] = useState<IHeroSlide[]>([]);
   const [purchases, setPurchases] = useState<IPurchase[]>([]);
+  const [callbackLogs, setCallbackLogs] = useState<ICallbackLog[]>([]);
+  const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [links, setLinks] = useState<Record<string, string>>({});
 
@@ -54,6 +68,10 @@ export default function AdminPage() {
 
     api<{ purchases: IPurchase[] }>("/api/admin/purchases")
       .then((res) => setPurchases(res.purchases))
+      .catch(() => {});
+
+    api<{ logs: ICallbackLog[] }>("/api/admin/callback-logs")
+      .then((res) => setCallbackLogs(res.logs))
       .catch(() => {});
   }, []);
 
@@ -245,6 +263,85 @@ export default function AdminPage() {
                       </span>
                     </td>
                   </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card" style={{ marginTop: "2rem" }}>
+        <div className="row between center wrap gap" style={{ marginBottom: "1rem" }}>
+          <div>
+            <h2>🔍 Auditoría de callbacks Niubiz</h2>
+            <p className="muted small">Registro de cada request recibido en <code>/api/niubiz/callback</code>.</p>
+          </div>
+          <span className="chip">{callbackLogs.length} registros</span>
+        </div>
+        {callbackLogs.length === 0 ? (
+          <p className="muted">No hay callbacks registrados todavía.</p>
+        ) : (
+          <div className="tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Resultado</th>
+                  <th>Firma válida</th>
+                  <th>Notas</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {callbackLogs.map((log) => (
+                  <>
+                    <tr key={log._id}>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        {new Date(log.receivedAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "medium" })}
+                      </td>
+                      <td>
+                        <span
+                          className="badge"
+                          style={{
+                            background: log.outcome === "processed" ? "#d1fae5" : log.outcome === "invalid_signature" || log.outcome === "missing_signature" ? "#fee2e2" : "#fef9c3",
+                            color: log.outcome === "processed" ? "#065f46" : log.outcome === "invalid_signature" || log.outcome === "missing_signature" ? "#991b1b" : "#713f12",
+                          }}
+                        >
+                          {log.outcome}
+                        </span>
+                      </td>
+                      <td>{log.signatureValid ? "✅" : "❌"}</td>
+                      <td className="muted small">{log.notes}</td>
+                      <td>
+                        <button
+                          className="ghostBtn smallBtn"
+                          onClick={() => setExpandedLog(expandedLog === log._id ? null : log._id)}
+                        >
+                          {expandedLog === log._id ? "Ocultar" : "Ver"}
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedLog === log._id && (
+                      <tr key={`${log._id}-detail`}>
+                        <td colSpan={5} style={{ padding: "0.75rem", background: "#f8f8f8" }}>
+                          <p className="small" style={{ marginBottom: "0.4rem" }}><strong>Headers:</strong></p>
+                          <pre style={{ fontSize: "0.75rem", overflowX: "auto", background: "#1e1e1e", color: "#d4d4d4", padding: "0.75rem", borderRadius: "0.5rem" }}>
+                            {JSON.stringify(log.headers, null, 2)}
+                          </pre>
+                          <p className="small" style={{ margin: "0.5rem 0 0.4rem" }}><strong>Body raw:</strong></p>
+                          <pre style={{ fontSize: "0.75rem", overflowX: "auto", background: "#1e1e1e", color: "#d4d4d4", padding: "0.75rem", borderRadius: "0.5rem" }}>
+                            {log.parsedBody ? JSON.stringify(log.parsedBody, null, 2) : log.rawBody}
+                          </pre>
+                          {log.signature && (
+                            <>
+                              <p className="small" style={{ margin: "0.5rem 0 0.4rem" }}><strong>NBZ-Signature:</strong></p>
+                              <code style={{ fontSize: "0.75rem", wordBreak: "break-all" }}>{log.signature}</code>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
