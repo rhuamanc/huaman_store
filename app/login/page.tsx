@@ -46,9 +46,6 @@ export default function LoginPage() {
         <button className="cta" disabled={loading} type="submit">
           {loading ? "Ingresando..." : "Ingresar"}
         </button>
-        <p className="small">
-          ¿No tienes cuenta? <Link href="/register">Regístrate</Link>
-        </p>
       </form>
     </main>
   );
