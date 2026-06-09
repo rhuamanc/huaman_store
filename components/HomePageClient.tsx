@@ -106,27 +106,7 @@ export default function HomePageClient({ initialQuery, initialCategory }: Props)
         </div>
       </section>
 
-      <section className="container">
-        <div className="catBanners">
-          {CAT_META.map(({ label, icon, bg, color }) => (
-            <button
-              key={label}
-              className={`catBanner${initialCategory === label ? " active" : ""}`}
-              style={{ background: bg, borderColor: initialCategory === label ? color : "transparent" }}
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (initialQuery.trim()) params.set("q", initialQuery.trim());
-                const nextCategory = initialCategory === label ? "Todas" : label;
-                if (nextCategory !== "Todas") params.set("category", nextCategory);
-                router.push(`/${params.toString() ? `?${params.toString()}` : ""}`);
-              }}
-            >
-              <span className="catIcon">{icon}</span>
-              <span className="catLabel" style={{ color }}>{label}</span>
-            </button>
-          ))}
-        </div>
-      </section>
+
 
       <section className="container section">
         <div className="sectionHeader">

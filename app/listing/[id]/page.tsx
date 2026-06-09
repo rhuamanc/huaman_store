@@ -160,9 +160,26 @@ export default function ListingDetailPage() {
           <p className="small muted" style={{ marginTop: "0.5rem" }}>Inicia sesión para gestionar tus anuncios.</p>
         )}
         {isOwner && (
-          <button className="ghostBtn" style={{ marginTop: "0.5rem", width: "100%" }} onClick={() => setEditing(true)}>
-            ✏️ Editar anuncio
-          </button>
+          <>
+            <button className="ghostBtn" style={{ marginTop: "0.5rem", width: "100%" }} onClick={() => setEditing(true)}>
+              ✏️ Editar anuncio
+            </button>
+            <button
+              className="ghostBtn"
+              style={{ marginTop: "0.4rem", width: "100%", color: "#c0392b", borderColor: "#c0392b" }}
+              onClick={async () => {
+                if (!confirm("¿Eliminar este anuncio? Esta acción no se puede deshacer.")) return;
+                try {
+                  await api(`/api/listings/${params.id}`, { method: "DELETE" });
+                  window.location.href = "/dashboard";
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "No se pudo eliminar");
+                }
+              }}
+            >
+              🗑️ Eliminar anuncio
+            </button>
+          </>
         )}
 
         <div className="howToBuy" style={{ marginTop: "1rem" }}>

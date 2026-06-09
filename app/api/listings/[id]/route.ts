@@ -146,12 +146,26 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getCurrentAuth();
+  if (!auth) {
+    return fail("No autenticado", 401);
+  }
+
   const { id } = await params;
   const listings = await readListings();
   const index = listings.findIndex((l) => l.id === id);
 
   if (index === -1) {
     return fail("Anuncio no encontrado", 404);
+  }
+
+  const listing = listings[index];
+  if (
+    listing.seller !== auth.userId &&
+    auth.role !== "admin" &&
+    listing.seller !== "anonymous"
+  ) {
+    return fail("No autorizado", 403);
   }
 
   listings.splice(index, 1);
