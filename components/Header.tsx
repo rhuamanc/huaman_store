@@ -121,6 +121,18 @@ export default function Header() {
             </button>
             {menuOpen && (
               <div className="dropdownPanel">
+                <form className="mobileSearchForm" style={{ display: "none" }} onSubmit={(e) => { setMenuOpen(false); submitSearch(e); }}>
+                  <input
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    placeholder="Buscar productos..."
+                  />
+                  <button type="submit">🔍</button>
+                </form>
+                <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
+                  + Publicar anuncio
+                </Link>
+                {!user && <Link href="/login" onClick={() => setMenuOpen(false)}>Ingresar</Link>}
                 <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
                   Mis anuncios
                 </Link>

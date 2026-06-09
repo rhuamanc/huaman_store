@@ -1067,61 +1067,58 @@ td {
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 900px) {
-  /* Header compacto en 2 filas: logo+nav arriba, buscador abajo */
+  /* Header mínimo: logo + hamburguesa */
   .topBarInner {
     grid-template-columns: auto 1fr;
-    grid-template-areas:
-      "logo nav"
-      "search search";
     gap: 0.4rem;
     padding-block: 0.5rem;
   }
 
-  .topBarInner > *:first-child {
-    grid-area: logo;
-    align-self: center;
+  /* Ocultar buscador y links de nav en la barra */
+  .topSearch {
+    display: none !important;
   }
 
-  .topBarInner > .topSearch {
-    grid-area: search;
+  .topBar nav > a,
+  .topBar nav > .headerPublishBtn {
+    display: none !important;
   }
 
-  .topBarInner > nav {
-    grid-area: nav;
+  .topBar nav {
     justify-content: flex-end;
   }
 
-  /* Buscador compacto: input + botón en una fila, ocultar categoría */
-  .topSearch {
+  /* Buscador dentro del dropdown */
+  .mobileSearchForm {
+    display: grid !important;
     grid-template-columns: 1fr auto;
     gap: 0.4rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--line);
   }
 
-  .topSearch .fieldCol:nth-child(2) {
-    display: none;
+  .mobileSearchForm input {
+    background: #fff;
+    border-radius: 0.7rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--line);
+    font-size: 1rem;
   }
 
-  .topSearch .fieldCol label {
-    display: none;
-  }
-
-  .topSearch .fieldCol input {
-    padding: 0.55rem 0.75rem;
-  }
-
-  .topSearchBtn {
-    padding: 0.55rem 0.9rem;
+  .mobileSearchForm button {
+    border: none;
+    border-radius: 0.7rem;
+    background: var(--ink);
+    color: #fff;
+    padding: 0.6rem 0.9rem;
+    cursor: pointer;
+    font-weight: 700;
   }
 
   .grid2,
   .detailGrid,
   .chatLayout {
     grid-template-columns: 1fr;
-  }
-
-  .topBar nav {
-    flex-wrap: wrap;
-    justify-content: flex-end;
   }
 
   .catBanners {
