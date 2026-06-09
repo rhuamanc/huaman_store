@@ -24,6 +24,7 @@ export interface IListingGeo {
 
 export interface IListingSize {
   label: string;       // ej: "S", "M", "L", "XL"
+  price?: number;      // precio específico de esta talla
   paymentLink: string; // URL de PagoLink para esta talla
 }
 

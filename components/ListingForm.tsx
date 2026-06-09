@@ -146,11 +146,11 @@ export default function ListingForm({ onCreated, onUpdated, initial, onCancel }:
         onChange={(e) => setPaymentLink(e.target.value)}
       />
 
-      <div className="fieldLabel" style={{ marginTop: "1rem" }}>Tallas con enlace de pago</div>
+      <div className="fieldLabel" style={{ marginTop: "1rem" }}>Tallas con precio y enlace de pago</div>
       {sizes.map((size, i) => (
-        <div key={i} className="row gap" style={{ alignItems: "center" }}>
+        <div key={i} className="row gap" style={{ alignItems: "center", flexWrap: "wrap" }}>
           <input
-            placeholder="Talla (ej: S, M, L, XL)"
+            placeholder="Talla (ej: S, M, L)"
             value={size.label}
             style={{ width: "6rem", flexShrink: 0 }}
             onChange={(e) => {
@@ -160,9 +160,22 @@ export default function ListingForm({ onCreated, onUpdated, initial, onCancel }:
             }}
           />
           <input
+            type="number"
+            placeholder="Precio S/"
+            value={size.price ?? ""}
+            style={{ width: "7rem", flexShrink: 0 }}
+            min={0}
+            step={0.01}
+            onChange={(e) => {
+              const next = [...sizes];
+              next[i] = { ...next[i], price: e.target.value === "" ? undefined : parseFloat(e.target.value) };
+              setSizes(next);
+            }}
+          />
+          <input
             placeholder="https://pagolink.niubiz.com.pe/pagoseguro/..."
             value={size.paymentLink}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minWidth: "10rem" }}
             onChange={(e) => {
               const next = [...sizes];
               next[i] = { ...next[i], paymentLink: e.target.value };

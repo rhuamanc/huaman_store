@@ -129,10 +129,11 @@ export default function ListingDetailPage() {
         )}
 
         {(() => {
-          const activeLink =
-            listing.sizes && listing.sizes.length > 0
-              ? listing.sizes.find((s) => s.label === selectedSize)?.paymentLink
-              : listing.paymentLink;
+          const activeSize = listing.sizes?.find((s) => s.label === selectedSize);
+          const activeLink = listing.sizes && listing.sizes.length > 0
+            ? activeSize?.paymentLink
+            : listing.paymentLink;
+          const activePrice = activeSize?.price ?? (listing.sizes && listing.sizes.length > 0 ? undefined : listing.price);
           return activeLink ? (
             <a
               href={activeLink}
@@ -141,7 +142,8 @@ export default function ListingDetailPage() {
               className="cta"
               style={{ display: "block", textAlign: "center", marginBottom: "0.5rem" }}
             >
-              💳 Pagar ahora{selectedSize ? ` — Talla ${selectedSize}` : ""}
+              💳 Pagar{activePrice != null ? ` S/ ${activePrice.toFixed(2)}` : " ahora"}
+              {selectedSize ? ` — Talla ${selectedSize}` : ""}
             </a>
           ) : null;
         })()}

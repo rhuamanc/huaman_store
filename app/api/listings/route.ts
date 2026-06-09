@@ -16,7 +16,7 @@ interface Listing {
   images: string[];
   status: string;
   paymentLink?: string;
-  sizes?: { label: string; paymentLink: string }[];
+  sizes?: { label: string; price?: number; paymentLink: string }[];
   geo?: {
     lat: number;
     lng: number;
@@ -42,6 +42,16 @@ const createSchema = z.object({
       address: z.string().optional(),
       city: z.string().optional(),
     })
+    .optional(),
+  paymentLink: z.string().url().optional().or(z.literal("")),
+  sizes: z
+    .array(
+      z.object({
+        label: z.string().min(1),
+        price: z.number().nonnegative().optional(),
+        paymentLink: z.string().url(),
+      })
+    )
     .optional(),
 });
 

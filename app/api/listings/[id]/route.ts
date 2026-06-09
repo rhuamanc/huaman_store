@@ -51,6 +51,7 @@ const updateSchema = z.object({
     .array(
       z.object({
         label: z.string().min(1),
+        price: z.number().nonnegative().optional(),
         paymentLink: z.string().url("URL de pago de talla inválida"),
       })
     )
