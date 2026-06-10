@@ -61,15 +61,8 @@ const ListingSchema = new Schema<IListing>(
 ListingSchema.index({ category: 1, createdAt: -1 });
 ListingSchema.index({ title: "text", description: "text" });
 
-const Listing =
-  (mongoose.models.Listing as Model<IListing>) || mongoose.model<IListing>("Listing", ListingSchema);
-
-export default Listing;
-
-ListingSchema.index({ category: 1, createdAt: -1 });
-ListingSchema.index({ title: "text", description: "text" });
-
-const Listing =
-  (mongoose.models.Listing as Model<IListing>) || mongoose.model<IListing>("Listing", ListingSchema);
+const Listing: Model<IListing> =
+  (mongoose.models["Listing"] as Model<IListing>) ||
+  mongoose.model<IListing>("Listing", ListingSchema);
 
 export default Listing;
