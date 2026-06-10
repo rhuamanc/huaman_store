@@ -88,7 +88,7 @@ export default function ListingDetailPage() {
         <p className="price">S/ {listing.price.toFixed(2)}</p>
         <p>{listing.description}</p>
         <p className="muted">Categoría: {listing.category}</p>
-        {listing.geo && (
+        {listing.geo && listing.geo.lat != null && listing.geo.lng != null && (
           <p className="muted">
             Ubicación: {listing.geo.city || "No definida"} ({listing.geo.lat.toFixed(5)}, {listing.geo.lng.toFixed(5)})
           </p>
