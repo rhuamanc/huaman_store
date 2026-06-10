@@ -10,6 +10,7 @@ export interface IListing extends mongoose.Document {
   status: "draft" | "published" | "sold" | "archived";
   moderationStatus: "pending" | "approved" | "rejected";
   paymentLink?: string;
+  sizes?: { label: string; price?: number; paymentLink: string }[];
   geo?: {
     lat: number;
     lng: number;
@@ -39,6 +40,13 @@ const ListingSchema = new Schema<IListing>(
       default: "pending",
     },
     paymentLink: { type: String },
+    sizes: [
+      {
+        label: { type: String, required: true },
+        price: { type: Number },
+        paymentLink: { type: String, required: true },
+      },
+    ],
     geo: {
       lat: { type: Number },
       lng: { type: Number },
@@ -49,6 +57,14 @@ const ListingSchema = new Schema<IListing>(
   },
   { timestamps: true }
 );
+
+ListingSchema.index({ category: 1, createdAt: -1 });
+ListingSchema.index({ title: "text", description: "text" });
+
+const Listing =
+  (mongoose.models.Listing as Model<IListing>) || mongoose.model<IListing>("Listing", ListingSchema);
+
+export default Listing;
 
 ListingSchema.index({ category: 1, createdAt: -1 });
 ListingSchema.index({ title: "text", description: "text" });

@@ -23,6 +23,7 @@ export function toListingSafe(listing: IListing & { seller: IUser }) {
     status: listing.status,
     moderationStatus: listing.moderationStatus,
     paymentLink: listing.paymentLink,
+    sizes: listing.sizes,
     geo: listing.geo,
     seller: toUserSafe(listing.seller),
     createdAt: listing.createdAt.toISOString(),

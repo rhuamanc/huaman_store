@@ -1,32 +1,11 @@
 import { z } from "zod";
-import { promises as fs } from "fs";
-import path from "path";
 import { fail, ok } from "@/lib/api";
 import { CATEGORIES } from "@/types";
 import { getCurrentAuth } from "@/lib/auth";
-
-const DATA_FILE = path.join(process.cwd(), "data", "listings.json");
-
-interface Listing {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  category: string;
-  images: string[];
-  status: string;
-  paymentLink?: string;
-  sizes?: { label: string; price?: number; paymentLink: string }[];
-  geo?: {
-    lat: number;
-    lng: number;
-    address?: string;
-    city?: string;
-  };
-  seller: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { connectDB } from "@/lib/db";
+import Listing from "@/models/Listing";
+import User from "@/models/User";
+import { toListingSafe } from "@/lib/serializers";
 
 const createSchema = z.object({
   title: z.string().min(4),
@@ -55,49 +34,36 @@ const createSchema = z.object({
     .optional(),
 });
 
-async function readListings(): Promise<Listing[]> {
-  try {
-    const data = await fs.readFile(DATA_FILE, "utf-8");
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-async function writeListings(listings: Listing[]): Promise<void> {
-  await fs.writeFile(DATA_FILE, JSON.stringify(listings, null, 2));
-}
-
 export async function GET(req: Request) {
+  await connectDB();
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category");
   const query = searchParams.get("q");
 
-  let listings = await readListings();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const filter: Record<string, any> = { status: "published" };
 
   if (category && CATEGORIES.includes(category as never)) {
-    listings = listings.filter((l) => l.category === category);
+    filter.category = category;
   }
 
   if (query) {
-    const q = query.toLowerCase();
-    listings = listings.filter(
-      (l) =>
-        l.title.toLowerCase().includes(q) ||
-        l.description.toLowerCase().includes(q)
-    );
+    filter.$text = { $search: query };
   }
 
-  listings = listings
-    .filter((l) => l.status === "published")
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 80);
+  const listings = await Listing.find(filter)
+    .populate("seller")
+    .sort({ createdAt: -1 })
+    .limit(80);
 
-  return ok({ listings });
+  return ok({ listings: listings.map((l) => toListingSafe(l as never)) });
 }
 
 export async function POST(req: Request) {
   const auth = await getCurrentAuth();
+  if (!auth) {
+    return fail("No autenticado", 401);
+  }
 
   const json = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(json);
@@ -106,17 +72,15 @@ export async function POST(req: Request) {
     return fail(`Datos inválidos: ${errors}`, 400);
   }
 
-  const listings = await readListings();
-  const newListing: Listing = {
-    id: Date.now().toString(),
+  await connectDB();
+  const user = await User.findById(auth.userId);
+  if (!user) return fail("Usuario no encontrado", 404);
+
+  const listing = await Listing.create({
     ...parsed.data,
-    seller: auth?.userId || "anonymous",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+    seller: user._id,
+  });
 
-  listings.push(newListing);
-  await writeListings(listings);
-
-  return ok({ listing: newListing }, 201);
+  await listing.populate("seller");
+  return ok({ listing: toListingSafe(listing as never) }, 201);
 }
