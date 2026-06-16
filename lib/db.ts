@@ -41,7 +41,7 @@ export async function connectDB() {
     cache.promise = mongoose.connect(getMongoUri(), {
       dbName: "huaman",
       bufferCommands: false,
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 5000,
     });
   }
 
