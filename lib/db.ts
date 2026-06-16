@@ -27,14 +27,21 @@ const cache: MongooseCache = global.mongooseCache ?? {
 global.mongooseCache = cache;
 
 export async function connectDB() {
-  if (cache.conn) {
+  if (cache.conn && cache.conn.connection.readyState === 1) {
     return cache.conn;
+  }
+
+  // In serverless environments, cached connections can become stale after freezes.
+  if (cache.conn && cache.conn.connection.readyState !== 1) {
+    cache.conn = null;
+    cache.promise = null;
   }
 
   if (!cache.promise) {
     cache.promise = mongoose.connect(getMongoUri(), {
       dbName: "huaman",
       bufferCommands: false,
+      serverSelectionTimeoutMS: 10000,
     });
   }
 

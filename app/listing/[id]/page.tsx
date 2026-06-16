@@ -8,8 +8,11 @@ import { WHATSAPP_NUMBER } from "@/lib/constants";
 import Carousel from "@/components/Carousel";
 import ListingForm from "@/components/ListingForm";
 
+const RETRYABLE_STATUS = new Set([404, 500, 502, 503, 504]);
+
 export default function ListingDetailPage() {
   const params = useParams<{ id: string }>();
+  const listingId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [listing, setListing] = useState<IListing | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
@@ -18,7 +21,6 @@ export default function ListingDetailPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const listingId = params.id;
     if (!listingId) return;
 
     let cancelled = false;
@@ -26,7 +28,20 @@ export default function ListingDetailPage() {
     setError("");
     setListing(null);
 
-    api<{ listing: IListing; isOwner: boolean }>(`/api/listings/${listingId}`)
+    const loadListing = async () => {
+      try {
+        return await api<{ listing: IListing; isOwner: boolean }>(`/api/listings/${listingId}`);
+      } catch (err) {
+        if (!(err instanceof ApiError) || !RETRYABLE_STATUS.has(err.status)) {
+          throw err;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 350));
+        return api<{ listing: IListing; isOwner: boolean }>(`/api/listings/${listingId}`);
+      }
+    };
+
+    loadListing()
       .then((res) => {
         if (cancelled) return;
 
@@ -52,18 +67,18 @@ export default function ListingDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [params.id]);
+  }, [listingId]);
 
   const startChat = async () => {
     try {
       const res = await api<{ conversationId: string }>("/api/conversations", {
         method: "POST",
-        body: JSON.stringify({ listingId: params.id }),
+        body: JSON.stringify({ listingId }),
       });
       window.location.href = `/chat?c=${res.conversationId}`;
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        window.location.href = `/login?next=/listing/${params.id}`;
+        window.location.href = `/login?next=/listing/${listingId}`;
         return;
       }
       setError(err instanceof Error ? err.message : "No se pudo iniciar el chat");
@@ -193,7 +208,7 @@ export default function ListingDetailPage() {
               onClick={async () => {
                 if (!confirm("¿Eliminar este anuncio? Esta acción no se puede deshacer.")) return;
                 try {
-                  await api(`/api/listings/${params.id}`, { method: "DELETE" });
+                  await api(`/api/listings/${listingId}`, { method: "DELETE" });
                   window.location.href = "/dashboard";
                 } catch (err) {
                   setError(err instanceof Error ? err.message : "No se pudo eliminar");

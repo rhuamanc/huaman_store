@@ -1,4 +1,5 @@
 import { z } from "zod";
+import mongoose from "mongoose";
 import { fail, ok } from "@/lib/api";
 import { CATEGORIES } from "@/types";
 import { getCurrentAuth } from "@/lib/auth";
@@ -35,9 +36,17 @@ const updateSchema = z.object({
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (!mongoose.isValidObjectId(id)) return fail("Anuncio no encontrado", 404);
+
   await connectDB();
 
-  const listing = await Listing.findById(id).populate("seller").catch(() => null);
+  let listing;
+  try {
+    listing = await Listing.findById(id).populate("seller");
+  } catch {
+    return fail("No se pudo cargar el anuncio", 500);
+  }
+
   if (!listing) return fail("Anuncio no encontrado", 404);
 
   const auth = await getCurrentAuth();
@@ -55,9 +64,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!auth) return fail("No autenticado", 401);
 
   const { id } = await params;
+  if (!mongoose.isValidObjectId(id)) return fail("Anuncio no encontrado", 404);
+
   await connectDB();
 
-  const listing = await Listing.findById(id).catch(() => null);
+  let listing;
+  try {
+    listing = await Listing.findById(id);
+  } catch {
+    return fail("No se pudo actualizar el anuncio", 500);
+  }
+
   if (!listing) return fail("Anuncio no encontrado", 404);
 
   if (listing.seller.toString() !== auth.userId && auth.role !== "admin") {
@@ -79,9 +96,17 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   if (!auth) return fail("No autenticado", 401);
 
   const { id } = await params;
+  if (!mongoose.isValidObjectId(id)) return fail("Anuncio no encontrado", 404);
+
   await connectDB();
 
-  const listing = await Listing.findById(id).catch(() => null);
+  let listing;
+  try {
+    listing = await Listing.findById(id);
+  } catch {
+    return fail("No se pudo eliminar el anuncio", 500);
+  }
+
   if (!listing) return fail("Anuncio no encontrado", 404);
 
   if (listing.seller.toString() !== auth.userId && auth.role !== "admin") {
