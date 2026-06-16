@@ -18,19 +18,40 @@ export default function ListingDetailPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api<{ listing: IListing; isOwner: boolean }>(`/api/listings/${params.id}`)
+    const listingId = params.id;
+    if (!listingId) return;
+
+    let cancelled = false;
+
+    setError("");
+    setListing(null);
+
+    api<{ listing: IListing; isOwner: boolean }>(`/api/listings/${listingId}`)
       .then((res) => {
+        if (cancelled) return;
+
         setListing(res.listing);
         setIsOwner(res.isOwner);
-        if (res.listing.sizes?.length) {
-          setSelectedSize(res.listing.sizes[0].label);
-        }
+        setSelectedSize(res.listing.sizes?.[0]?.label ?? null);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "No se pudo cargar"));
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "No se pudo cargar");
+      });
 
     api<{ user: { _id: string } | null }>("/api/auth/me")
-      .then((res) => setLoggedIn(!!res.user))
-      .catch(() => setLoggedIn(false));
+      .then((res) => {
+        if (cancelled) return;
+        setLoggedIn(!!res.user);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoggedIn(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [params.id]);
 
   const startChat = async () => {
