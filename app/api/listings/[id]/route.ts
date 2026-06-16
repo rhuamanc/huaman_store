@@ -38,13 +38,18 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) return fail("Anuncio no encontrado", 404);
 
-  await connectDB();
-
   let listing;
   try {
+    await connectDB();
     listing = await Listing.findById(id).populate("seller");
   } catch {
-    return fail("No se pudo cargar el anuncio", 500);
+    try {
+      // Retry once for transient connection/query hiccups in serverless runtime.
+      await connectDB();
+      listing = await Listing.findById(id).populate("seller");
+    } catch {
+      return fail("No se pudo cargar el anuncio", 500);
+    }
   }
 
   if (!listing) return fail("Anuncio no encontrado", 404);

@@ -45,6 +45,13 @@ export async function connectDB() {
     });
   }
 
-  cache.conn = await cache.promise;
-  return cache.conn;
+  try {
+    cache.conn = await cache.promise;
+    return cache.conn;
+  } catch (error) {
+    // Reset cache on connection failure so next request can retry cleanly.
+    cache.conn = null;
+    cache.promise = null;
+    throw error;
+  }
 }
