@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import { fail, ok } from "@/lib/api";
 import { getCurrentAuth } from "@/lib/auth";
 import Listing from "@/models/Listing";
+import "@/models/User";
 import { toListingSafe } from "@/lib/serializers";
 
 const schema = z.object({

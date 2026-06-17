@@ -5,6 +5,7 @@ import { CATEGORIES } from "@/types";
 import { getCurrentAuth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Listing from "@/models/Listing";
+import "@/models/User";
 import { toListingSafe } from "@/lib/serializers";
 
 function describeError(error: unknown) {
