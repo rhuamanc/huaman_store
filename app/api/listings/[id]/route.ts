@@ -7,6 +7,16 @@ import { connectDB } from "@/lib/db";
 import Listing from "@/models/Listing";
 import { toListingSafe } from "@/lib/serializers";
 
+function describeError(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
 const updateSchema = z.object({
   title: z.string().min(4).optional(),
   description: z.string().min(10).optional(),
@@ -42,13 +52,14 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   try {
     await connectDB();
     listing = await Listing.findById(id).populate("seller");
-  } catch {
+  } catch (firstError) {
     try {
       // Retry once for transient connection/query hiccups in serverless runtime.
       await connectDB();
       listing = await Listing.findById(id).populate("seller");
-    } catch {
-      return fail("No se pudo cargar el anuncio", 500);
+    } catch (retryError) {
+      const detail = `first=${describeError(firstError)}; retry=${describeError(retryError)}`;
+      return fail("No se pudo cargar el anuncio", 500, detail);
     }
   }
 
@@ -57,9 +68,14 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const auth = await getCurrentAuth();
   if (listing.status !== "published" && !auth) return fail("Anuncio no disponible", 404);
 
+  const sellerId =
+    typeof listing.seller === "object" && listing.seller !== null && "_id" in listing.seller
+      ? String((listing.seller as { _id: unknown })._id)
+      : String(listing.seller);
+
   const isOwner =
     !!auth &&
-    (auth.role === "admin" || listing.seller._id.toString() === auth.userId);
+    (auth.role === "admin" || sellerId === auth.userId);
 
   return ok({ listing: toListingSafe(listing as never), isOwner });
 }
@@ -76,8 +92,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   let listing;
   try {
     listing = await Listing.findById(id);
-  } catch {
-    return fail("No se pudo actualizar el anuncio", 500);
+  } catch (error) {
+    return fail("No se pudo actualizar el anuncio", 500, describeError(error));
   }
 
   if (!listing) return fail("Anuncio no encontrado", 404);
@@ -108,8 +124,8 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   let listing;
   try {
     listing = await Listing.findById(id);
-  } catch {
-    return fail("No se pudo eliminar el anuncio", 500);
+  } catch (error) {
+    return fail("No se pudo eliminar el anuncio", 500, describeError(error));
   }
 
   if (!listing) return fail("Anuncio no encontrado", 404);
